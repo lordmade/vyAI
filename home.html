@@ -119,7 +119,7 @@
     }
 
     .signout-btn {
-      background: #666666; /* Gray for sign-out to differentiate */
+      background: #666666;
       margin-top: 1rem;
     }
 
@@ -246,16 +246,15 @@
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
     import { getFirestore, collection, getDocs, addDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
-      authDomain: "fire-b-a8878.firebaseapp.com",
-      databaseURL: "https://fire-b-a8878.firebaseio.com",
-      projectId: "fire-b-a8878",
-      storageBucket: "fire-b-a8878.firebasestorage.app",
-      messagingSenderId: "658673187627",
-      appId: "1:658673187627:web:6e4c29af661785f0afa36e",
-      measurementId: "G-V4W97VMSKL"
-    };
+   const firebaseConfig = {
+  apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+  authDomain: "fire-b-a8878.firebaseapp.com",
+  projectId: "fire-b-a8878",
+  storageBucket: "fire-b-a8878.firebasestorage.app",
+  messagingSenderId: "658673187627",
+  appId: "1:658673187627:web:6e4c29af661785f0afa36e",
+  measurementId: "G-V4W97VMSKL"
+};
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -289,20 +288,27 @@
         const user = auth.currentUser;
         if (!user) {
           showToast("Please sign in to load training data.");
+          window.location.href = "index.html";
           return;
         }
+        console.log("Loading training data for user:", user.uid);
         const querySnapshot = await getDocs(collection(db, `users/${user.uid}/training-data`));
         trainingData = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          if (data.input && data.output && Object.values(data.input).every(v => typeof v === 'number') && Object.values(data.output).every(v => typeof v === 'number')) {
+          if (
+            data.input &&
+            data.output &&
+            Object.values(data.input).every(v => typeof v === 'number') &&
+            Object.values(data.output).every(v => typeof v === 'number')
+          ) {
             trainingData.push(data);
           } else {
-            console.warn("Invalid training data skipped:", data);
+            console.warn("Skipping invalid training data:", data);
           }
         });
+        console.log("Loaded training data:", trainingData);
         if (trainingData.length > 0) {
-          console.log("Training data loaded:", trainingData);
           net.train(trainingData, {
             iterations: 1000,
             errorThresh: 0.005,
@@ -322,12 +328,16 @@
     }
 
     function processInput(text) {
+      if (!text) {
+        console.warn("Empty input text provided");
+        return null;
+      }
       const words = text.toLowerCase().split(" ");
       const input = {
-        happy: words.includes("happy") ? 1 : 0,
-        great: words.includes("great") ? 1 : 0,
-        sad: words.includes("sad") ? 1 : 0,
-        bad: words.includes("bad") ? 1 : 0
+        happy: words.includes("happy") || words.includes("awesome") ? 1 : 0,
+        great: words.includes("great") || words.includes("good") ? 1 : 0,
+        sad: words.includes("sad") || words.includes("terrible") ? 1 : 0,
+        bad: words.includes("bad") || words.includes("awful") ? 1 : 0
       };
       console.log("Processed input:", input);
       return input;
@@ -337,21 +347,28 @@
       const userInput = document.getElementById("user-input").value.trim();
       const chatOutput = document.getElementById("chat-output");
 
-      if (userInput) {
-        chatOutput.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
-        const input = processInput(userInput);
-        try {
-          const output = net.run(input);
-          console.log("Model output:", output);
-          const response = output.positive > output.negative ? "That sounds positive!" : "That sounds negative.";
-          chatOutput.innerHTML += `<p><strong>AI:</strong> ${response}</p>`;
-        } catch (error) {
-          console.error("Model prediction failed:", error);
-          chatOutput.innerHTML += `<p><strong>AI:</strong> Error processing input. Please train the model first.</p>`;
-        }
-        document.getElementById("user-input").value = "";
-        chatOutput.scrollTop = chatOutput.scrollHeight;
+      if (!userInput) {
+        showToast("Please enter a message.");
+        return;
       }
+
+      chatOutput.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+      const input = processInput(userInput);
+      if (!input) {
+        chatOutput.innerHTML += `<p><strong>AI:</strong> Invalid input. Please try again.</p>`;
+        return;
+      }
+      try {
+        const output = net.run(input);
+        console.log("Model output:", output);
+        const response = output.positive > output.negative ? "That sounds positive!" : "That sounds negative.";
+        chatOutput.innerHTML += `<p><strong>AI:</strong> ${response}</p>`;
+      } catch (error) {
+        console.error("Model prediction failed:", error.message);
+        chatOutput.innerHTML += `<p><strong>AI:</strong> Error processing input. Please train the model first.</p>`;
+      }
+      document.getElementById("user-input").value = "";
+      chatOutput.scrollTop = chatOutput.scrollHeight;
     };
 
     window.trainModel = async function () {
@@ -366,20 +383,25 @@
 
       if (!auth.currentUser) {
         showToast("Please sign in to train the model.");
+        window.location.href = "index.html";
         return;
       }
 
       showSpinner();
       try {
         const input = processInput(trainInput);
+        if (!input) {
+          throw new Error("Invalid input text provided.");
+        }
         const output = trainLabel === "positive" ? { positive: 1 } : { negative: 1 };
         const newData = { input, output };
 
-        console.log("Adding training data:", newData);
-        await addDoc(collection(db, `users/${auth.currentUser.uid}/training-data`), newData);
+        console.log("Attempting to add training data:", newData);
+        const docRef = await addDoc(collection(db, `users/${auth.currentUser.uid}/training-data`), newData);
+        console.log("Training data added with ID:", docRef.id);
         trainingData.push(newData);
 
-        console.log("Training with data:", trainingData);
+        console.log("Training model with data:", trainingData);
         net.train(trainingData, {
           iterations: 1000,
           errorThresh: 0.005,
@@ -392,8 +414,16 @@
         chatOutput.scrollTop = chatOutput.scrollHeight;
         showToast("Model updated successfully.");
       } catch (error) {
-        console.error("Training failed:", error.code || error.message);
-        showToast(`Failed to train model: ${error.message}`);
+        console.error("Training failed:", error.code || "No code", error.message);
+        let errorMessage = "Failed to train model.";
+        if (error.code === "permission-denied") {
+          errorMessage = "Permission denied. Check Firestore security rules.";
+        } else if (error.code === "unavailable") {
+          errorMessage = "Firestore unavailable. Check your network.";
+        } else if (error.message.includes("Invalid input")) {
+          errorMessage = "Invalid training input. Try different text.";
+        }
+        showToast(errorMessage);
       } finally {
         hideSpinner();
       }
@@ -404,12 +434,9 @@
       try {
         const user = auth.currentUser;
         if (user) {
-          // Update online status in Firestore
           await setDoc(doc(db, `users/${user.uid}`), { online: false }, { merge: true });
-          // Sign out
           await signOut(auth);
           showToast("Signed out successfully.");
-          // Redirect to index.html
           setTimeout(() => {
             window.location.href = "index.html";
           }, 500);
@@ -434,13 +461,18 @@
       await new Promise((resolve, reject) => {
         onAuthStateChanged(auth, (user) => {
           if (!user) {
+            console.log("No user authenticated, redirecting to index.html");
             window.location.href = "index.html";
           } else {
             console.log("User authenticated:", user.uid);
             loadTrainingData();
             resolve();
           }
-        }, reject);
+        }, (error) => {
+          console.error("Auth state check failed:", error);
+          showToast("Authentication check failed.");
+          reject(error);
+        });
       });
     });
   </script>
