@@ -118,6 +118,15 @@
       transform: scale(1.05);
     }
 
+    .signout-btn {
+      background: #666666; /* Gray for sign-out to differentiate */
+      margin-top: 1rem;
+    }
+
+    .signout-btn:hover {
+      background: #555555;
+    }
+
     .spinner-overlay {
       display: none;
       position: fixed;
@@ -220,6 +229,7 @@
       </div>
       <button onclick="trainModel()">Add Training Data</button>
     </div>
+    <button class="signout-btn" id="signout-btn">Sign Out</button>
   </div>
 
   <div class="spinner-overlay" id="spinner">
@@ -233,8 +243,8 @@
   <script src="https://cdn.jsdelivr.net/npm/brain.js@2.0.0-beta.2/dist/brain-browser.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, addDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
@@ -257,6 +267,7 @@
     const spinner = document.getElementById("spinner");
     const toast = document.getElementById("toast");
     const toastMessage = document.getElementById("toast-message");
+    const signoutBtn = document.getElementById("signout-btn");
 
     function showSpinner() {
       spinner.classList.add("active");
@@ -276,13 +287,22 @@
       showSpinner();
       try {
         const user = auth.currentUser;
-        if (!user) return;
+        if (!user) {
+          showToast("Please sign in to load training data.");
+          return;
+        }
         const querySnapshot = await getDocs(collection(db, `users/${user.uid}/training-data`));
         trainingData = [];
         querySnapshot.forEach((doc) => {
-          trainingData.push(doc.data());
+          const data = doc.data();
+          if (data.input && data.output && Object.values(data.input).every(v => typeof v === 'number') && Object.values(data.output).every(v => typeof v === 'number')) {
+            trainingData.push(data);
+          } else {
+            console.warn("Invalid training data skipped:", data);
+          }
         });
         if (trainingData.length > 0) {
+          console.log("Training data loaded:", trainingData);
           net.train(trainingData, {
             iterations: 1000,
             errorThresh: 0.005,
@@ -290,10 +310,12 @@
             logPeriod: 100
           });
           showToast("Model trained with existing data.");
+        } else {
+          showToast("No training data found. Add some to start!");
         }
       } catch (error) {
-        console.error("Failed to load training data:", error);
-        showToast("Failed to load training data.");
+        console.error("Failed to load training data:", error.code, error.message);
+        showToast(`Failed to load training data: ${error.message}`);
       } finally {
         hideSpinner();
       }
@@ -301,12 +323,14 @@
 
     function processInput(text) {
       const words = text.toLowerCase().split(" ");
-      return {
+      const input = {
         happy: words.includes("happy") ? 1 : 0,
         great: words.includes("great") ? 1 : 0,
         sad: words.includes("sad") ? 1 : 0,
         bad: words.includes("bad") ? 1 : 0
       };
+      console.log("Processed input:", input);
+      return input;
     }
 
     window.sendMessage = function () {
@@ -316,9 +340,15 @@
       if (userInput) {
         chatOutput.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
         const input = processInput(userInput);
-        const output = net.run(input);
-        const response = output.positive > output.negative ? "That sounds positive!" : "That sounds negative.";
-        chatOutput.innerHTML += `<p><strong>AI:</strong> ${response}</p>`;
+        try {
+          const output = net.run(input);
+          console.log("Model output:", output);
+          const response = output.positive > output.negative ? "That sounds positive!" : "That sounds negative.";
+          chatOutput.innerHTML += `<p><strong>AI:</strong> ${response}</p>`;
+        } catch (error) {
+          console.error("Model prediction failed:", error);
+          chatOutput.innerHTML += `<p><strong>AI:</strong> Error processing input. Please train the model first.</p>`;
+        }
         document.getElementById("user-input").value = "";
         chatOutput.scrollTop = chatOutput.scrollHeight;
       }
@@ -334,14 +364,22 @@
         return;
       }
 
+      if (!auth.currentUser) {
+        showToast("Please sign in to train the model.");
+        return;
+      }
+
       showSpinner();
       try {
         const input = processInput(trainInput);
         const output = trainLabel === "positive" ? { positive: 1 } : { negative: 1 };
         const newData = { input, output };
 
+        console.log("Adding training data:", newData);
         await addDoc(collection(db, `users/${auth.currentUser.uid}/training-data`), newData);
         trainingData.push(newData);
+
+        console.log("Training with data:", trainingData);
         net.train(trainingData, {
           iterations: 1000,
           errorThresh: 0.005,
@@ -354,8 +392,33 @@
         chatOutput.scrollTop = chatOutput.scrollHeight;
         showToast("Model updated successfully.");
       } catch (error) {
-        console.error("Training failed:", error);
-        showToast("Failed to train model.");
+        console.error("Training failed:", error.code || error.message);
+        showToast(`Failed to train model: ${error.message}`);
+      } finally {
+        hideSpinner();
+      }
+    };
+
+    window.signOutUser = async function () {
+      showSpinner();
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          // Update online status in Firestore
+          await setDoc(doc(db, `users/${user.uid}`), { online: false }, { merge: true });
+          // Sign out
+          await signOut(auth);
+          showToast("Signed out successfully.");
+          // Redirect to index.html
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 500);
+        } else {
+          showToast("No user is signed in.");
+        }
+      } catch (error) {
+        console.error("Sign out failed:", error.code || error.message);
+        showToast(`Failed to sign out: ${error.message}`);
       } finally {
         hideSpinner();
       }
@@ -365,12 +428,15 @@
       if (e.key === "Enter") sendMessage();
     });
 
+    document.getElementById("signout-btn").addEventListener("click", signOutUser);
+
     document.addEventListener("DOMContentLoaded", async () => {
       await new Promise((resolve, reject) => {
         onAuthStateChanged(auth, (user) => {
           if (!user) {
             window.location.href = "index.html";
           } else {
+            console.log("User authenticated:", user.uid);
             loadTrainingData();
             resolve();
           }
