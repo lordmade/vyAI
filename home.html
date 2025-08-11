@@ -246,7 +246,7 @@
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import { getFirestore, collection, getDocs, addDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    const firebaseConfig = {
+   const firebaseConfig = {
   apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
   authDomain: "fire-b-a8878.firebaseapp.com",
   projectId: "fire-b-a8878",
@@ -298,6 +298,7 @@
           if (
             data.input &&
             data.output &&
+            data.text &&
             Object.values(data.input).every(v => typeof v === 'number' && !isNaN(v)) &&
             Object.values(data.output).every(v => typeof v === 'number' && !isNaN(v))
           ) {
@@ -309,7 +310,7 @@
         console.log("Loaded training data:", trainingData);
         if (trainingData.length > 0) {
           try {
-            net.train(trainingData, {
+            net.train(trainingData.map(d => ({ input: d.input, output: d.output })), {
               iterations: 1000,
               errorThresh: 0.005,
               log: true,
@@ -353,6 +354,38 @@
       return input;
     }
 
+    function generateHumanLikeResponse(output, inputText) {
+      const isPositive = output.positive > output.negative;
+      const sentiment = isPositive ? "positive" : "negative";
+      console.log("Generating response for sentiment:", sentiment, "Output:", output);
+
+      // Find training data with matching sentiment
+      const matchingData = trainingData.filter(d =>
+        (d.output.positive > d.output.negative && isPositive) ||
+        (d.output.negative > d.output.positive && !isPositive)
+      );
+
+      if (matchingData.length === 0) {
+        return isPositive
+          ? "Sounds like you're in a great mood!"
+          : "I'm sorry you're feeling down.";
+      }
+
+      // Pick a random matching text as a base
+      const randomIndex = Math.floor(Math.random() * matchingData.length);
+      const baseText = matchingData[randomIndex].text;
+
+      // Generate response by adapting the base text
+      const responses = [
+        `Hey, that reminds me of someone who said "${baseText}"! You're feeling ${sentiment}, right?`,
+        `Sounds like you're ${sentiment}, kinda like "${baseText}". What's up?`,
+        `${isPositive ? "Awesome" : "Oh no"}, that's giving me "${baseText}" vibes! Tell me more!`
+      ];
+      const response = responses[Math.floor(Math.random() * responses.length)];
+      console.log("Generated response:", response);
+      return response;
+    }
+
     window.sendMessage = function () {
       const userInput = document.getElementById("user-input").value.trim();
       const chatOutput = document.getElementById("chat-output");
@@ -371,7 +404,7 @@
       try {
         const output = net.run(input);
         console.log("Model output:", output);
-        const response = output.positive > output.negative ? "That sounds positive!" : "That sounds negative.";
+        const response = generateHumanLikeResponse(output, userInput);
         chatOutput.innerHTML += `<p><strong>AI:</strong> ${response}</p>`;
       } catch (error) {
         console.error("Model prediction failed:", error.message);
@@ -404,7 +437,7 @@
           throw new Error("Invalid input text provided.");
         }
         const output = trainLabel === "positive" ? { positive: 1, negative: 0 } : { negative: 1, positive: 0 };
-        const newData = { input, output };
+        const newData = { input, output, text: trainInput };
 
         console.log("Attempting to add training data:", newData);
         const docRef = await addDoc(collection(db, `users/${auth.currentUser.uid}/training-data`), newData);
@@ -413,7 +446,7 @@
 
         console.log("Training model with data:", trainingData);
         try {
-          net.train(trainingData, {
+          net.train(trainingData.map(d => ({ input: d.input, output: d.output })), {
             iterations: 1000,
             errorThresh: 0.005,
             log: true,
