@@ -7,19 +7,19 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
-      --primary: #000000; /* Black */
-      --secondary: #FFFFFF; /* White */
+      --primary: #000000;
+      --secondary: #FFFFFF;
       --text-dark: #000000;
-      --text-light: #666666; /* Gray for lighter text */
-      --border: #CCCCCC; /* Light gray border */
+      --text-light: #666666;
+      --border: #CCCCCC;
       --white: #FFFFFF;
       --background: #FFFFFF;
-      --background-dark: #1C1C1C; /* Darker black for dark mode */
+      --background-dark: #1C1C1C;
       --text-dark-dark: #FFFFFF;
       --text-light-dark: #999999;
       --border-dark: #444444;
       --white-dark: #2A2A2A;
-      --gradient-bg: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%); /* Subtle white gradient */
+      --gradient-bg: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%);
     }
 
     [data-theme="dark"] {
@@ -28,7 +28,7 @@
       --text-light: var(--text-light-dark);
       --border: var(--border-dark);
       --white: var(--white-dark);
-      --gradient-bg: linear-gradient(135deg, #2A2A2A 0%, #1C1C1C 100%); /* Dark gradient */
+      --gradient-bg: linear-gradient(135deg, #2A2A2A 0%, #1C1C1C 100%);
     }
 
     body {
@@ -184,7 +184,7 @@
     }
 
     .auth-btn:hover {
-      background: #333333; /* Darker shade for hover */
+      background: #333333;
       transform: scale(1.05);
     }
 
@@ -420,20 +420,19 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-    import { getFirestore, collection, setDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { getFirestore, collection, setDoc, doc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
-      authDomain: "fire-b-a8878.firebaseapp.com",
-      databaseURL: "https://fire-b-a8878.firebaseio.com",
-      projectId: "fire-b-a8878",
-      storageBucket: "fire-b-a8878.firebasestorage.app",
-      messagingSenderId: "658673187627",
-      appId: "1:658673187627:web:6e4c29af661785f0afa36e",
-      measurementId: "G-V4W97VMSKL"
-    };
+  const firebaseConfig = {
+  apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+  authDomain: "fire-b-a8878.firebaseapp.com",
+  projectId: "fire-b-a8878",
+  storageBucket: "fire-b-a8878.firebasestorage.app",
+  messagingSenderId: "658673187627",
+  appId: "1:658673187627:web:6e4c29af661785f0afa36e",
+  measurementId: "G-V4W97VMSKL"
+};
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -479,9 +478,7 @@
     function showToast(message) {
       toastMessage.textContent = message;
       toast.classList.add("active");
-      setTimeout(() => {
-        toast.classList.remove("active");
-      }, 3000);
+      setTimeout(() => toast.classList.remove("active"), 3000);
     }
 
     document.querySelector(".custom-alert .close-btn").addEventListener("click", hideAlert);
@@ -492,6 +489,7 @@
         await new Promise((resolve, reject) => {
           onAuthStateChanged(auth, (user) => {
             if (user) {
+              console.log("User already signed in:", user.uid);
               document.body.classList.add("fade-out");
               setTimeout(() => {
                 window.location.href = "home.html";
@@ -579,10 +577,10 @@
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+        console.log("Signed up user:", user.uid);
 
         await updateProfile(user, { displayName: username, photoURL: profilePicUrl });
 
-        // Create default account in Firestore
         const userRef = doc(db, `users/${user.uid}`);
         await setDoc(userRef, {
           username: username,
@@ -592,9 +590,8 @@
           online: true
         });
 
-        // Initialize default AI training data in Firestore
         const defaultTrainingData = [
-          { input: { happy: 1, great: 1, sad: 0, bad: 0 }, output: { positive: 1 } },
+          { input: { happy: 1, great: 0, sad: 0, bad: 0 }, output: { positive: 1 } },
           { input: { sad: 1, bad: 1, happy: 0, great: 0 }, output: { negative: 1 } }
         ];
         for (const data of defaultTrainingData) {
@@ -602,13 +599,12 @@
         }
 
         showToast(`${username} is now online`);
-
         document.body.classList.add("fade-out");
         setTimeout(() => {
           window.location.href = "home.html";
         }, 500);
       } catch (error) {
-        console.error("Sign up failed:", error);
+        console.error("Sign up failed:", error.code, error.message);
         let errorMessage = "Failed to sign up. Please try again.";
         if (error.code === "auth/email-already-in-use") {
           errorMessage = "Email is already in use.";
@@ -637,18 +633,18 @@
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+        console.log("Signed in user:", user.uid);
 
         const userRef = doc(db, `users/${user.uid}`);
         await setDoc(userRef, { online: true }, { merge: true });
 
         showToast(`${user.displayName || 'User'} is now online`);
-
         document.body.classList.add("fade-out");
         setTimeout(() => {
           window.location.href = "home.html";
         }, 500);
       } catch (error) {
-        console.error("Sign in failed:", error);
+        console.error("Sign in failed:", error.code, error.message);
         let errorMessage = "Failed to sign in. Please try again.";
         if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
           errorMessage = "Invalid email or password.";
@@ -675,13 +671,6 @@
       const theme = localStorage.getItem("theme") || "light";
       document.documentElement.setAttribute("data-theme", theme);
     }
-
-    document.addEventListener("DOMContentLoaded", async () => {
-      applyTheme();
-      await checkAuthState();
-      setupTabListeners();
-      setupAuthListeners();
-    });
 
     function setupAuthListeners() {
       if (signupBtn) {
@@ -714,6 +703,13 @@
         });
       }
     }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      applyTheme();
+      await checkAuthState();
+      setupTabListeners();
+      setupAuthListeners();
+    });
   </script>
 </body>
 </html>
