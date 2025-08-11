@@ -246,7 +246,7 @@
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import { getFirestore, collection, getDocs, addDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-   const firebaseConfig = {
+    const firebaseConfig = {
   apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
   authDomain: "fire-b-a8878.firebaseapp.com",
   projectId: "fire-b-a8878",
@@ -324,8 +324,14 @@
           showToast("No training data found. Add some to start!");
         }
       } catch (error) {
-        console.error("Failed to load training data:", error.code, error.message);
-        showToast(`Failed to load training data: ${error.message}`);
+        console.error("Failed to load training data:", error.code || "No code", error.message);
+        let errorMessage = `Failed to load training data: ${error.message}`;
+        if (error.code === "permission-denied") {
+          errorMessage = "Permission denied when loading training data. Check Firestore rules.";
+        } else if (error.code === "unavailable") {
+          errorMessage = "Firestore unavailable. Check your network.";
+        }
+        showToast(errorMessage);
       } finally {
         hideSpinner();
       }
@@ -426,7 +432,7 @@
         console.error("Training failed:", error.code || "No code", error.message);
         let errorMessage = "Failed to train model.";
         if (error.code === "permission-denied") {
-          errorMessage = "Permission denied. Check Firestore security rules.";
+          errorMessage = "Permission denied. Check Firestore security rules for training-data.";
         } else if (error.code === "unavailable") {
           errorMessage = "Firestore unavailable. Check your network.";
         } else if (error.message.includes("Invalid input") || error.message.includes("Invalid training data")) {
