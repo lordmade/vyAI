@@ -1,25 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Sign Up / Sign In - ChatSphere</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grade Food | Restaurant Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
   <style>
     :root {
-      --primary: #000000;
-      --secondary: #FFFFFF;
-      --text-dark: #000000;
-      --text-light: #666666;
-      --border: #CCCCCC;
+      --grade-green: #00A550;
+      --grade-dark: #1A202C;
+      --text-dark: #1A202C;
+      --text-light: #4A5568;
+      --border: #E2E8F0;
       --white: #FFFFFF;
-      --background: #FFFFFF;
-      --background-dark: #1C1C1C;
-      --text-dark-dark: #FFFFFF;
-      --text-light-dark: #999999;
-      --border-dark: #444444;
-      --white-dark: #2A2A2A;
-      --gradient-bg: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%);
+      --background: #F7FAFC;
+      --background-dark: #1A202C;
+      --text-dark-dark: #EDF2F7;
+      --text-light-dark: #A0AEC0;
+      --border-dark: #4A5568;
+      --white-dark: #2D3748;
+      --gradient-bg: linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%);
     }
 
     [data-theme="dark"] {
@@ -28,195 +30,150 @@
       --text-light: var(--text-light-dark);
       --border: var(--border-dark);
       --white: var(--white-dark);
-      --gradient-bg: linear-gradient(135deg, #2A2A2A 0%, #1C1C1C 100%);
+      --gradient-bg: linear-gradient(135deg, #2D3748 0%, #1A202C 100%);
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background: var(--background);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: var(--gradient-bg);
       min-height: 100vh;
       margin: 0;
       padding: 0;
-      transition: opacity 0.5s ease, background 0.3s ease;
-    }
-
-    body.fade-out {
-      opacity: 0;
+      color: var(--text-dark);
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
     .container {
-      max-width: 450px;
-      margin: 3rem auto;
-      padding: 2rem;
-      background: var(--gradient-bg);
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: var(--white);
       border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-      text-align: center;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .container:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-    }
-
-    @media (max-width: 640px) {
-      .container {
-        margin: 1.5rem;
-        padding: 1.5rem;
-      }
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1.5rem;
     }
 
     .logo {
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--text-dark);
-      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--grade-green);
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 0.5rem;
     }
 
     .logo svg {
-      width: 32px;
-      height: 32px;
-      fill: var(--text-dark);
+      width: 24px;
+      height: 24px;
+      fill: var(--grade-green);
     }
 
-    .tabs {
+    .action-btn {
+      padding: 0.6rem 1.5rem;
+      background: var(--grade-green);
+      color: var(--white);
+      border: none;
+      border-radius: 9999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .action-btn:hover {
+      background: #008C3F;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .tab-nav {
       display: flex;
-      justify-content: center;
-      margin-bottom: 2rem;
+      gap: 0.5rem;
+      padding: 1rem;
       background: var(--white);
-      border-radius: 12px;
-      overflow: hidden;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tab-nav::-webkit-scrollbar {
+      display: none;
     }
 
     .tab-btn {
-      flex: 1;
-      padding: 0.75rem;
+      padding: 0.5rem 1.25rem;
       background: var(--white);
-      border: none;
       color: var(--text-dark);
-      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      transition: all 0.3s ease;
     }
 
-    .tab-btn.active {
-      background: var(--primary);
-      color: var(--secondary);
-    }
-
-    .tab-btn:hover {
-      background: var(--primary);
-      color: var(--secondary);
-      transform: scale(1.02);
+    .tab-btn.active, .tab-btn:hover {
+      background: var(--grade-green);
+      color: var(--white);
+      border-color: var(--grade-green);
     }
 
     .tab-content {
       display: none;
+      padding: 1.5rem;
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
     .tab-content.active {
       display: block;
     }
 
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--text-dark);
-      margin: 0 0 1.5rem;
-    }
-
-    .input-group {
-      margin-bottom: 1.25rem;
-      text-align: left;
-    }
-
-    .input-group label {
-      display: block;
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: var(--text-dark);
-      margin-bottom: 0.5rem;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-      background: var(--white);
-    }
-
-    .input-group input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .profile-pic-preview {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin: 0 auto 1rem;
-      display: block;
-      border: 2px solid var(--border);
-    }
-
-    .auth-btn {
-      width: 100%;
-      padding: 0.75rem;
-      background: var(--primary);
-      color: var(--secondary);
-      border: none;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s ease, transform 0.2s ease;
-    }
-
-    .auth-btn:hover {
-      background: #333333;
-      transform: scale(1.05);
-    }
-
-    .auth-btn.tap-active {
-      transform: scale(0.98);
-    }
-
-    .custom-alert {
+    .modal {
       display: none;
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       background: var(--white);
-      padding: 1.5rem 2rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
       z-index: 1000;
-      color: var(--text-dark);
-      font-weight: 500;
-      text-align: center;
       max-width: 90%;
-      width: 320px;
-      animation: fadeIn 0.3s ease-out forwards;
-      border: 1px solid var(--border);
+      width: 500px;
     }
 
-    .custom-alert.active {
+    .modal.active {
       display: block;
     }
 
-    .custom-alert .close-btn {
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 999;
+    }
+
+    .modal-overlay.active {
+      display: block;
+    }
+
+    .close-btn {
       position: absolute;
       top: 0.75rem;
       right: 0.75rem;
@@ -224,491 +181,728 @@
       height: 24px;
       background: none;
       border: none;
-      color: var(--primary);
+      color: var(--grade-green);
       cursor: pointer;
-      transition: transform 0.2s ease, color 0.2s ease;
-    }
-
-    .custom-alert .close-btn:hover {
-      transform: scale(1.2);
-      color: #333333;
-    }
-
-    .custom-alert .close-btn svg {
-      width: 100%;
-      height: 100%;
-    }
-
-    .spinner-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .spinner-overlay.active {
-      display: flex;
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid var(--primary);
-      border-top: 4px solid transparent;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
     }
 
     .toast {
       display: none;
       position: fixed;
-      top: 20px;
-      right: 20px;
-      background: var(--primary);
-      color: var(--secondary);
+      top: 16px;
+      right: 16px;
+      background: var(--grade-green);
+      color: var(--white);
       padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       z-index: 1000;
       font-weight: 500;
-      animation: slideIn 0.3s ease-out forwards;
+      animation: slideIn 0.4s ease-out forwards;
     }
 
     .toast.active {
       display: block;
     }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    @keyframes fadeIn {
-      0% { opacity: 0; }
-      100% { opacity: 1; }
-    }
-
     @keyframes slideIn {
-      0% { transform: translateX(100%); opacity: 0; }
+      0% { transform: translateX(120%); opacity: 0; }
       100% { transform: translateX(0); opacity: 1; }
     }
 
-    @media (max-width: 640px) {
+    .form-input {
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      width: 100%;
+      font-size: 0.9rem;
+      color: var(--text-dark);
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--grade-green);
+      box-shadow: 0 0 0 2px rgba(0, 165, 80, 0.2);
+    }
+
+    #map {
+      height: 300px;
+      border-radius: 12px;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
       .container {
-        margin: 1rem;
         padding: 1rem;
+      }
+
+      .header {
+        padding: 0.75rem;
       }
 
       .logo {
-        font-size: 1.5rem;
-      }
-
-      .logo svg {
-        width: 24px;
-        height: 24px;
-      }
-
-      h1 {
         font-size: 1.25rem;
       }
 
-      .tab-btn {
-        font-size: 0.9rem;
-        padding: 0.5rem;
-      }
-
-      .input-group label {
-        font-size: 0.9rem;
-      }
-
-      .input-group input {
-        padding: 0.5rem;
-        font-size: 0.9rem;
-      }
-
-      .auth-btn {
-        padding: 0.5rem;
-        font-size: 0.9rem;
-      }
-
-      .custom-alert {
+      .modal {
         width: 85%;
         padding: 1rem;
-      }
-
-      .toast {
-        right: 10px;
-        max-width: 80%;
-      }
-
-      .profile-pic-preview {
-        width: 60px;
-        height: 60px;
       }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="logo">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-      </svg>
-      ChatSphere
+    <div class="header">
+      <div class="logo">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5"></path>
+        </svg>
+        Restaurant Dashboard
+      </div>
+      <button class="action-btn" id="logout-btn">Log Out</button>
     </div>
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="signup" aria-label="Switch to Sign Up tab">Sign Up</button>
-      <button class="tab-btn" data-tab="signin" aria-label="Switch to Sign In tab">Sign In</button>
-    </div>
-    <div class="tab-content active" id="signup-tab">
-      <h1>Create Your Account</h1>
-      <div class="input-group">
-        <label for="username-input">Username</label>
-        <input type="text" id="username-input" placeholder="Enter your username" maxlength="30" aria-label="Enter your username" />
-      </div>
-      <div class="input-group">
-        <label for="email-input">Email</label>
-        <input type="email" id="email-input" placeholder="Enter your email" aria-label="Enter your email" />
-      </div>
-      <div class="input-group">
-        <label for="password-input">Password</label>
-        <input type="password" id="password-input" placeholder="Enter your password" aria-label="Enter your password" />
-      </div>
-      <div class="input-group">
-        <label for="profile-pic-input">Profile Picture</label>
-        <input type="file" id="profile-pic-input" accept="image/*" aria-label="Upload profile picture" />
-        <img id="profile-pic-preview" class="profile-pic-preview" src="https://via.placeholder.com/80" alt="Profile picture preview" style="display: none;" />
-      </div>
-      <button class="auth-btn" id="signup-btn" aria-label="Sign up">Sign Up</button>
-    </div>
-    <div class="tab-content" id="signin-tab">
-      <h1>Sign In</h1>
-      <div class="input-group">
-        <label for="signin-email-input">Email</label>
-        <input type="email" id="signin-email-input" placeholder="Enter your email" aria-label="Enter your email" />
-      </div>
-      <div class="input-group">
-        <label for="signin-password-input">Password</label>
-        <input type="password" id="signin-password-input" placeholder="Enter your password" aria-label="Enter your password" />
-      </div>
-      <button class="auth-btn" id="signin-btn" aria-label="Sign in">Sign In</button>
-    </div>
-  </div>
 
-  <div id="custom-alert" class="custom-alert">
-    <button class="close-btn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
-    </button>
-    <p id="alert-message">An error occurred. Please try again.</p>
-  </div>
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="restaurants">Restaurants</button>
+      <button class="tab-btn" data-tab="menu">Menu Management</button>
+      <button class="tab-btn" data-tab="orders">Orders</button>
+    </div>
 
-  <div class="spinner-overlay" id="spinner">
-    <div class="spinner"></div>
-  </div>
+    <div class="tab-content active" id="overview">
+      <h2 class="text-xl font-bold mb-4 text-text-dark">Dashboard Overview</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="p-4 bg-white rounded-lg shadow-md">
+          <h3 class="font-semibold text-text-dark">Total Restaurants</h3>
+          <p id="total-restaurants" class="text-text-light">0</p>
+        </div>
+        <div class="p-4 bg-white rounded-lg shadow-md">
+          <h3 class="font-semibold text-text-dark">Today's Orders</h3>
+          <p id="today-orders" class="text-text-light">0</p>
+        </div>
+        <div class="p-4 bg-white rounded-lg shadow-md">
+          <h3 class="font-semibold text-text-dark">Total Revenue</h3>
+          <p id="revenue" class="text-text-light">R0.00</p>
+        </div>
+      </div>
+    </div>
 
-  <div class="toast" id="toast">
-    <p id="toast-message"></p>
+    <div class="tab-content" id="restaurants">
+      <h2 class="text-xl font-bold mb-4 text-text-dark">Restaurants</h2>
+      <button class="action-btn mb-4" id="add-restaurant-btn">Add New Restaurant</button>
+      <select id="restaurant-selector" class="form-input mb-4">
+        <option value="">Select a Restaurant</option>
+      </select>
+      <div id="restaurant-info" class="mb-4"></div>
+      <div id="restaurant-list" class="grid grid-cols-1 gap-4"></div>
+    </div>
+
+    <div class="tab-content" id="menu">
+      <h2 class="text-xl font-bold mb-4 text-text-dark">Menu Management</h2>
+      <button class="action-btn mb-4" id="add-item-btn">Add New Item</button>
+      <div id="menu-items" class="grid grid-cols-1 gap-4"></div>
+    </div>
+
+    <div class="tab-content" id="orders">
+      <h2 class="text-xl font-bold mb-4 text-text-dark">Orders</h2>
+      <div id="order-list" class="grid grid-cols-1 gap-4"></div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal" id="add-restaurant-modal">
+      <button class="close-btn" id="add-restaurant-close-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <h2 class="text-xl font-bold mb-4 text-text-dark">Add Restaurant</h2>
+      <form id="add-restaurant-form" class="space-y-4">
+        <div>
+          <label class="block mb-1 text-text-dark">Restaurant Name</label>
+          <input type="text" id="restaurant-name" class="form-input" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Address</label>
+          <input type="text" id="restaurant-address" class="form-input" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Phone</label>
+          <input type="tel" id="restaurant-phone" class="form-input" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Location (Click on Map)</label>
+          <div id="map"></div>
+          <input type="hidden" id="restaurant-lat" required>
+          <input type="hidden" id="restaurant-lng" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Restaurant Image</label>
+          <input type="file" id="restaurant-image" class="form-input" accept="image/*">
+        </div>
+        <button type="submit" class="action-btn w-full">Add Restaurant</button>
+      </form>
+    </div>
+
+    <div class="modal" id="add-item-modal">
+      <button class="close-btn" id="add-item-close-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <h2 class="text-xl font-bold mb-4 text-text-dark">Add Menu Item</h2>
+      <form id="add-item-form" class="space-y-4">
+        <div>
+          <label class="block mb-1 text-text-dark">Item Name</label>
+          <input type="text" id="item-name" class="form-input" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Category</label>
+          <input type="text" id="item-category" class="form-input" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Price (R)</label>
+          <input type="number" id="item-price" class="form-input" step="0.01" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Stock</label>
+          <input type="number" id="item-stock" class="form-input" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Item Image</label>
+          <input type="file" id="item-image" class="form-input" accept="image/*">
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Available</label>
+          <input type="checkbox" id="item-available" class="accent-grade-green">
+        </div>
+        <button type="submit" class="action-btn w-full">Add Item</button>
+      </form>
+    </div>
+
+    <div class="toast" id="toast">
+      <p id="toast-message" class="text-white"></p>
+    </div>
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { getFirestore, collection, setDoc, doc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, push, update, remove } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
-  const firebaseConfig = {
-  apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
-  authDomain: "fire-b-a8878.firebaseapp.com",
-  projectId: "fire-b-a8878",
-  storageBucket: "fire-b-a8878.firebasestorage.app",
-  messagingSenderId: "658673187627",
-  appId: "1:658673187627:web:6e4c29af661785f0afa36e",
-  measurementId: "G-V4W97VMSKL"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+      authDomain: "fire-b-a8878.firebaseapp.com",
+      databaseURL: "https://fire-b-a8878.firebaseio.com",
+      projectId: "fire-b-a8878",
+      storageBucket: "fire-b-a8878.firebasestorage.app",
+      messagingSenderId: "658673187627",
+      appId: "1:658673187627:web:6e4c29af661785f0afa36e",
+      measurementId: "G-V4W97VMSKL"
+    };
 
     const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
     const auth = getAuth(app);
-    const db = getFirestore(app);
 
-    const signupBtn = document.getElementById("signup-btn");
-    const signinBtn = document.getElementById("signin-btn");
-    const usernameInput = document.getElementById("username-input");
-    const emailInput = document.getElementById("email-input");
-    const passwordInput = document.getElementById("password-input");
-    const profilePicInput = document.getElementById("profile-pic-input");
-    const profilePicPreview = document.getElementById("profile-pic-preview");
-    const signinEmailInput = document.getElementById("signin-email-input");
-    const signinPasswordInput = document.getElementById("signin-password-input");
-    const customAlert = document.getElementById("custom-alert");
-    const alertMessage = document.getElementById("alert-message");
-    const spinner = document.getElementById("spinner");
-    const toast = document.getElementById("toast");
-    const toastMessage = document.getElementById("toast-message");
-    const tabButtons = document.querySelectorAll(".tab-btn");
-    const tabContents = document.querySelectorAll(".tab-content");
+    // Cloudinary configuration (replace with your Cloudinary details)
+    const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload';
+    const CLOUDINARY_UPLOAD_PRESET = 'YOUR_UPLOAD_PRESET';
 
-    function showAlert(message, autoHide = true) {
-      alertMessage.textContent = message;
-      customAlert.classList.add("active");
-      if (autoHide) {
-        setTimeout(hideAlert, 5000);
-      }
-    }
+    // Mapbox configuration
+    mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
 
-    function hideAlert() {
-      customAlert.classList.remove("active");
-    }
+    const tabNav = document.querySelector('.tab-nav');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const addRestaurantBtn = document.getElementById('add-restaurant-btn');
+    const addRestaurantModal = document.getElementById('add-restaurant-modal');
+    const addRestaurantCloseBtn = document.getElementById('add-restaurant-close-btn');
+    const addRestaurantForm = document.getElementById('add-restaurant-form');
+    const addItemBtn = document.getElementById('add-item-btn');
+    const addItemModal = document.getElementById('add-item-modal');
+    const addItemCloseBtn = document.getElementById('add-item-close-btn');
+    const addItemForm = document.getElementById('add-item-form');
+    const modalOverlay = document.getElementById('modal-overlay');
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    const restaurantSelector = document.getElementById('restaurant-selector');
+    const restaurantInfo = document.getElementById('restaurant-info');
+    const restaurantList = document.getElementById('restaurant-list');
+    const totalRestaurants = document.getElementById('total-restaurants');
+    const todayOrders = document.getElementById('today-orders');
+    const revenue = document.getElementById('revenue');
+    const menuItemsDiv = document.getElementById('menu-items');
+    const orderList = document.getElementById('order-list');
+    const logoutBtn = document.getElementById('logout-btn');
 
-    function showSpinner() {
-      spinner.classList.add("active");
-    }
-
-    function hideSpinner() {
-      spinner.classList.remove("active");
-    }
+    let currentUser = null;
+    let selectedRestaurantId = null;
+    let map = null;
 
     function showToast(message) {
       toastMessage.textContent = message;
-      toast.classList.add("active");
-      setTimeout(() => toast.classList.remove("active"), 3000);
+      toast.classList.add('active');
+      setTimeout(() => toast.classList.remove('active'), 3000);
     }
 
-    document.querySelector(".custom-alert .close-btn").addEventListener("click", hideAlert);
-
-    async function checkAuthState() {
-      try {
-        await setPersistence(auth, browserLocalPersistence);
-        await new Promise((resolve, reject) => {
-          onAuthStateChanged(auth, (user) => {
-            if (user) {
-              console.log("User already signed in:", user.uid);
-              document.body.classList.add("fade-out");
-              setTimeout(() => {
-                window.location.href = "home.html";
-              }, 500);
-            } else {
-              resolve();
-            }
-          }, reject);
-        });
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        showAlert("Failed to verify authentication. Please try again.", false);
-      }
+    function applyTheme() {
+      const theme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', theme);
     }
 
-    async function uploadProfilePicture(file) {
-      if (!file) return null;
-      const cloudName = "dqkujefxj";
-      const uploadPreset = "banter_box";
-      const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+    function switchTab(tabId) {
+      tabContents.forEach(content => content.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+    }
 
+    async function uploadImage(file) {
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", uploadPreset);
+      formData.append('file', file);
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
 
       try {
-        const response = await fetch(url, {
-          method: "POST",
+        const response = await fetch(CLOUDINARY_URL, {
+          method: 'POST',
           body: formData
         });
         const data = await response.json();
         if (data.secure_url) {
           return data.secure_url;
         } else {
-          throw new Error("Failed to upload image");
+          throw new Error('Image upload failed');
         }
       } catch (error) {
-        console.error("Image upload failed:", error);
-        throw error;
+        throw new Error('Image upload failed: ' + error.message);
       }
     }
 
-    profilePicInput.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          profilePicPreview.src = event.target.result;
-          profilePicPreview.style.display = "block";
-        };
-        reader.readAsDataURL(file);
-      } else {
-        profilePicPreview.style.display = "none";
-        profilePicPreview.src = "https://via.placeholder.com/80";
-      }
-    });
+    function initMap() {
+      map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [0, 0],
+        zoom: 2
+      });
 
-    async function handleSignUp() {
-      const username = usernameInput.value.trim();
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-      const profilePicFile = profilePicInput.files[0];
+      const marker = new mapboxgl.Marker({ draggable: true }).setLngLat([0, 0]).addTo(map);
 
-      if (!username || !email || !password) {
-        showAlert("Please fill in all required fields.", true);
-        return;
-      }
+      map.on('click', (e) => {
+        const { lng, lat } = e.lngLat;
+        marker.setLngLat([lng, lat]);
+        document.getElementById('restaurant-lat').value = lat;
+        document.getElementById('restaurant-lng').value = lng;
+      });
 
-      if (username.length > 30) {
-        showAlert("Username must be 30 characters or less.", true);
-        return;
-      }
+      marker.on('dragend', () => {
+        const lngLat = marker.getLngLat();
+        document.getElementById('restaurant-lat').value = lngLat.lat;
+        document.getElementById('restaurant-lng').value = lngLat.lng;
+      });
+    }
 
-      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-        showAlert("Username must contain only letters, numbers, and underscores.", true);
-        return;
-      }
+    function loadRestaurants() {
+      if (!currentUser) return;
+      const restaurantsRef = ref(db, 'restaurants');
+      onValue(restaurantsRef, (snapshot) => {
+        const restaurants = snapshot.val() || {};
+        restaurantSelector.innerHTML = '<option value="">Select a Restaurant</option>';
+        restaurantList.innerHTML = '';
+        let restaurantCount = 0;
 
-      showSpinner();
-      try {
-        let profilePicUrl = null;
-        if (profilePicFile) {
-          profilePicUrl = await uploadProfilePicture(profilePicFile);
-        }
+        Object.entries(restaurants).forEach(([id, restaurant]) => {
+          if (restaurant.ownerId !== currentUser.uid) return;
+          restaurantCount++;
+          const option = document.createElement('option');
+          option.value = id;
+          option.textContent = restaurant.name;
+          restaurantSelector.appendChild(option);
 
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        console.log("Signed up user:", user.uid);
-
-        await updateProfile(user, { displayName: username, photoURL: profilePicUrl });
-
-        const userRef = doc(db, `users/${user.uid}`);
-        await setDoc(userRef, {
-          username: username,
-          email: email,
-          profilePic: profilePicUrl || null,
-          createdAt: new Date().toISOString(),
-          online: true
+          const restaurantDiv = document.createElement('div');
+          restaurantDiv.className = 'p-4 bg-white rounded-lg shadow-md';
+          restaurantDiv.innerHTML = `
+            <p class="font-semibold text-text-dark">${restaurant.name}</p>
+            <p class="text-text-light">${restaurant.address}</p>
+            <p class="text-text-light">Phone: ${restaurant.phone}</p>
+            <p class="text-text-light">Location: (${restaurant.latitude.toFixed(4)}, ${restaurant.longitude.toFixed(4)})</p>
+            ${restaurant.imageUrl ? `<img src="${restaurant.imageUrl}" alt="${restaurant.name}" class="w-full h-32 object-cover rounded-lg mt-2">` : ''}
+            <div class="flex gap-2 mt-2">
+              <button class="action-btn" data-id="${id}" data-action="edit">Edit</button>
+              <button class="action-btn bg-grade-dark text-white" data-id="${id}" data-action="delete">Delete</button>
+            </div>
+          `;
+          restaurantList.appendChild(restaurantDiv);
         });
 
-        const defaultTrainingData = [
-          { input: { happy: 1, great: 0, sad: 0, bad: 0 }, output: { positive: 1 } },
-          { input: { sad: 1, bad: 1, happy: 0, great: 0 }, output: { negative: 1 } }
-        ];
-        for (const data of defaultTrainingData) {
-          await addDoc(collection(db, `users/${user.uid}/training-data`), data);
-        }
-
-        showToast(`${username} is now online`);
-        document.body.classList.add("fade-out");
-        setTimeout(() => {
-          window.location.href = "home.html";
-        }, 500);
-      } catch (error) {
-        console.error("Sign up failed:", error.code, error.message);
-        let errorMessage = "Failed to sign up. Please try again.";
-        if (error.code === "auth/email-already-in-use") {
-          errorMessage = "Email is already in use.";
-        } else if (error.code === "auth/invalid-email") {
-          errorMessage = "Invalid email format.";
-        } else if (error.code === "auth/weak-password") {
-          errorMessage = "Password is too weak. Use at least 6 characters.";
-        } else if (error.message.includes("Failed to upload image")) {
-          errorMessage = "Failed to upload profile picture. Please try again.";
-        }
-        hideSpinner();
-        showAlert(errorMessage, true);
-      }
+        totalRestaurants.textContent = restaurantCount;
+      });
     }
 
-    async function handleSignIn() {
-      const email = signinEmailInput.value.trim();
-      const password = signinPasswordInput.value.trim();
-
-      if (!email || !password) {
-        showAlert("Please fill in all fields.", true);
+    function loadRestaurantInfo() {
+      if (!selectedRestaurantId) {
+        restaurantInfo.innerHTML = '<p class="text-text-light">Select a restaurant to view details</p>';
         return;
       }
-
-      showSpinner();
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        console.log("Signed in user:", user.uid);
-
-        const userRef = doc(db, `users/${user.uid}`);
-        await setDoc(userRef, { online: true }, { merge: true });
-
-        showToast(`${user.displayName || 'User'} is now online`);
-        document.body.classList.add("fade-out");
-        setTimeout(() => {
-          window.location.href = "home.html";
-        }, 500);
-      } catch (error) {
-        console.error("Sign in failed:", error.code, error.message);
-        let errorMessage = "Failed to sign in. Please try again.";
-        if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
-          errorMessage = "Invalid email or password.";
-        } else if (error.code === "auth/invalid-email") {
-          errorMessage = "Invalid email format.";
+      const restaurantRef = ref(db, `restaurants/${selectedRestaurantId}`);
+      onValue(restaurantRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          restaurantInfo.innerHTML = `
+            <p class="text-text-dark font-semibold">${data.name}</p>
+            <p class="text-text-light">${data.address}</p>
+            <p class="text-text-light">Phone: ${data.phone}</p>
+            <p class="text-text-light">Location: (${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)})</p>
+            ${data.imageUrl ? `<img src="${data.imageUrl}" alt="${data.name}" class="w-full h-32 object-cover rounded-lg mt-2">` : ''}
+          `;
         }
-        hideSpinner();
-        showAlert(errorMessage, true);
-      }
+      });
     }
 
-    function setupTabListeners() {
-      tabButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-          tabButtons.forEach(b => b.classList.remove("active"));
-          tabContents.forEach(c => c.classList.remove("active"));
-          btn.classList.add("active");
-          document.getElementById(`${btn.dataset.tab}-tab`).classList.add("active");
+    function loadMenuItems() {
+      if (!selectedRestaurantId) {
+        menuItemsDiv.innerHTML = '<p class="text-text-light">Select a restaurant to view menu</p>';
+        return;
+      }
+      const menuRef = ref(db, 'menu');
+      onValue(menuRef, (snapshot) => {
+        const menuItems = snapshot.val() || {};
+        menuItemsDiv.innerHTML = '';
+        Object.entries(menuItems).forEach(([id, item]) => {
+          if (item.restaurantId !== selectedRestaurantId) return;
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'p-4 bg-white rounded-lg shadow-md';
+          itemDiv.innerHTML = `
+            <p class="font-semibold text-text-dark">${item.name}</p>
+            <p class="text-text-light">Category: ${item.category}</p>
+            <p class="text-text-light">Price: R${item.price.toFixed(2)}</p>
+            <p class="text-text-light">Stock: ${item.stock}</p>
+            <p class="text-text-light">Available: ${item.available ? 'Yes' : 'No'}</p>
+            ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.name}" class="w-full h-32 object-cover rounded-lg mt-2">` : ''}
+            <div class="flex gap-2 mt-2">
+              <button class="action-btn" data-id="${id}" data-action="edit">Edit</button>
+              <button class="action-btn bg-grade-dark text-white" data-id="${id}" data-action="delete">Delete</button>
+            </div>
+          `;
+          menuItemsDiv.appendChild(itemDiv);
         });
       });
     }
 
-    function applyTheme() {
-      const theme = localStorage.getItem("theme") || "light";
-      document.documentElement.setAttribute("data-theme", theme);
+    function loadOrders() {
+      if (!selectedRestaurantId) {
+        orderList.innerHTML = '<p class="text-text-light">Select a restaurant to view orders</p>';
+        return;
+      }
+      const ordersRef = ref(db, 'onlineOrders');
+      onValue(ordersRef, (snapshot) => {
+        const orders = snapshot.val() || {};
+        let totalRevenue = 0;
+        let todayOrderCount = 0;
+        const today = new Date().setHours(0, 0, 0, 0);
+        orderList.innerHTML = '';
+        Object.entries(orders).forEach(([id, order]) => {
+          const orderItems = order.items || [];
+          const hasRestaurantItem = orderItems.some(item => menuItems[item.itemId]?.restaurantId === selectedRestaurantId);
+          if (!hasRestaurantItem) return;
+          const orderDate = new Date(order.timestamp);
+          if (orderDate >= today) {
+            todayOrderCount++;
+            totalRevenue += order.total;
+          }
+          const orderDiv = document.createElement('div');
+          orderDiv.className = 'p-4 bg-white rounded-lg shadow-md';
+          orderDiv.innerHTML = `
+            <p class="font-semibold text-text-dark">Order #${order.orderNumber}</p>
+            <p class="text-text-light">Customer: ${order.customerDetails.name}</p>
+            <p class="text-text-light">Total: R${order.total.toFixed(2)}</p>
+            <p class="text-text-light">Status: ${order.status}</p>
+            <select class="form-input mt-2" data-id="${id}">
+              <option value="new" ${order.status === 'new' ? 'selected' : ''}>New</option>
+              <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready</option>
+              <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
+            </select>
+          `;
+          orderList.appendChild(orderDiv);
+        });
+        todayOrders.textContent = todayOrderCount;
+        revenue.textContent = `R${totalRevenue.toFixed(2)}`;
+      });
     }
 
-    function setupAuthListeners() {
-      if (signupBtn) {
-        signupBtn.addEventListener("click", () => {
-          handleSignUp();
-          signupBtn.classList.add("tap-active");
-          setTimeout(() => signupBtn.classList.remove("tap-active"), 100);
+    function setupListeners() {
+      tabNav.addEventListener('click', (e) => {
+        if (e.target.classList.contains('tab-btn')) {
+          switchTab(e.target.dataset.tab);
+        }
+      });
+
+      addRestaurantBtn.addEventListener('click', () => {
+        addRestaurantModal.classList.add('active');
+        modalOverlay.classList.add('active');
+        addRestaurantForm.reset();
+        document.getElementById('restaurant-lat').value = '';
+        document.getElementById('restaurant-lng').value = '';
+        initMap();
+      });
+
+      addRestaurantCloseBtn.addEventListener('click', () => {
+        addRestaurantModal.classList.remove('active');
+        modalOverlay.classList.remove('active');
+      });
+
+      modalOverlay.addEventListener('click', () => {
+        addRestaurantModal.classList.remove('active');
+        addItemModal.classList.remove('active');
+        modalOverlay.classList.remove('active');
+      });
+
+      addRestaurantForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const file = document.getElementById('restaurant-image').files[0];
+        let imageUrl = null;
+        if (file) {
+          try {
+            imageUrl = await uploadImage(file);
+          } catch (error) {
+            showToast(error.message);
+            return;
+          }
+        }
+        const restaurant = {
+          name: document.getElementById('restaurant-name').value,
+          address: document.getElementById('restaurant-address').value,
+          phone: document.getElementById('restaurant-phone').value,
+          latitude: parseFloat(document.getElementById('restaurant-lat').value),
+          longitude: parseFloat(document.getElementById('restaurant-lng').value),
+          imageUrl,
+          ownerId: currentUser.uid
+        };
+        try {
+          const newRestaurantRef = push(ref(db, 'restaurants'));
+          await set(newRestaurantRef, restaurant);
+          showToast('Restaurant added successfully');
+          addRestaurantModal.classList.remove('active');
+          modalOverlay.classList.remove('active');
+          addRestaurantForm.reset();
+        } catch (error) {
+          showToast('Failed to add restaurant: ' + error.message);
+        }
+      });
+
+      addItemBtn.addEventListener('click', () => {
+        if (!selectedRestaurantId) {
+          showToast('Please select a restaurant first');
+          return;
+        }
+        addItemModal.classList.add('active');
+        modalOverlay.classList.add('active');
+        addItemForm.reset();
+        document.getElementById('item-available').checked = true;
+      });
+
+      addItemCloseBtn.addEventListener('click', () => {
+        addItemModal.classList.remove('active');
+        modalOverlay.classList.remove('active');
+      });
+
+      addItemForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const file = document.getElementById('item-image').files[0];
+        let imageUrl = null;
+        if (file) {
+          try {
+            imageUrl = await uploadImage(file);
+          } catch (error) {
+            showToast(error.message);
+            return;
+          }
+        }
+        const item = {
+          name: document.getElementById('item-name').value,
+          category: document.getElementById('item-category').value,
+          price: parseFloat(document.getElementById('item-price').value),
+          stock: parseInt(document.getElementById('item-stock').value),
+          imageUrl,
+          available: document.getElementById('item-available').checked,
+          restaurantId: selectedRestaurantId
+        };
+        try {
+          const newItemRef = push(ref(db, 'menu'));
+          await set(newItemRef, item);
+          showToast('Menu item added successfully');
+          addItemModal.classList.remove('active');
+          modalOverlay.classList.remove('active');
+          addItemForm.reset();
+        } catch (error) {
+          showToast('Failed to add item: ' + error.message);
+        }
+      });
+
+      restaurantSelector.addEventListener('change', (e) => {
+        selectedRestaurantId = e.target.value;
+        loadRestaurantInfo();
+        loadMenuItems();
+        loadOrders();
+      });
+
+      restaurantList.addEventListener('click', async (e) => {
+        if (e.target.dataset.action === 'delete') {
+          if (confirm('Are you sure you want to delete this restaurant?')) {
+            try {
+              await remove(ref(db, `restaurants/${e.target.dataset.id}`));
+              showToast('Restaurant deleted successfully');
+            } catch (error) {
+              showToast('Failed to delete restaurant: ' + error.message);
+            }
+          }
+        } else if (e.target.dataset.action === 'edit') {
+          const restaurantRef = ref(db, `restaurants/${e.target.dataset.id}`);
+          onValue(restaurantRef, (snapshot) => {
+            const restaurant = snapshot.val();
+            document.getElementById('restaurant-name').value = restaurant.name;
+            document.getElementById('restaurant-address').value = restaurant.address;
+            document.getElementById('restaurant-phone').value = restaurant.phone;
+            document.getElementById('restaurant-lat').value = restaurant.latitude;
+            document.getElementById('restaurant-lng').value = restaurant.longitude;
+            addRestaurantModal.classList.add('active');
+            modalOverlay.classList.add('active');
+            initMap();
+            map.setCenter([restaurant.longitude, restaurant.latitude]);
+            new mapboxgl.Marker({ draggable: true })
+              .setLngLat([restaurant.longitude, restaurant.latitude])
+              .addTo(map)
+              .on('dragend', () => {
+                const lngLat = this.getLngLat();
+                document.getElementById('restaurant-lat').value = lngLat.lat;
+                document.getElementById('restaurant-lng').value = lngLat.lng;
+              });
+            addRestaurantForm.onsubmit = async (e) => {
+              e.preventDefault();
+              const file = document.getElementById('restaurant-image').files[0];
+              let imageUrl = restaurant.imageUrl;
+              if (file) {
+                try {
+                  imageUrl = await uploadImage(file);
+                } catch (error) {
+                  showToast(error.message);
+                  return;
+                }
+              }
+              try {
+                await update(restaurantRef, {
+                  name: document.getElementById('restaurant-name').value,
+                  address: document.getElementById('restaurant-address').value,
+                  phone: document.getElementById('restaurant-phone').value,
+                  latitude: parseFloat(document.getElementById('restaurant-lat').value),
+                  longitude: parseFloat(document.getElementById('restaurant-lng').value),
+                  imageUrl,
+                  ownerId: currentUser.uid
+                });
+                showToast('Restaurant updated successfully');
+                addRestaurantModal.classList.remove('active');
+                modalOverlay.classList.remove('active');
+                addRestaurantForm.reset();
+                addRestaurantForm.onsubmit = null;
+              } catch (error) {
+                showToast('Failed to update restaurant: ' + error.message);
+              }
+            };
+          }, { once: true });
+        }
+      });
+
+      menuItemsDiv.addEventListener('click', async (e) => {
+        if (e.target.dataset.action === 'delete') {
+          if (confirm('Are you sure you want to delete this item?')) {
+            try {
+              await remove(ref(db, `menu/${e.target.dataset.id}`));
+              showToast('Menu item deleted successfully');
+            } catch (error) {
+              showToast('Failed to delete item: ' + error.message);
+            }
+          }
+        } else if (e.target.dataset.action === 'edit') {
+          const itemRef = ref(db, `menu/${e.target.dataset.id}`);
+          onValue(itemRef, (snapshot) => {
+            const item = snapshot.val();
+            document.getElementById('item-name').value = item.name;
+            document.getElementById('item-category').value = item.category;
+            document.getElementById('item-price').value = item.price;
+            document.getElementById('item-stock').value = item.stock;
+            document.getElementById('item-available').checked = item.available;
+            addItemModal.classList.add('active');
+            modalOverlay.classList.add('active');
+            addItemForm.onsubmit = async (e) => {
+              e.preventDefault();
+              const file = document.getElementById('item-image').files[0];
+              let imageUrl = item.imageUrl;
+              if (file) {
+                try {
+                  imageUrl = await uploadImage(file);
+                } catch (error) {
+                  showToast(error.message);
+                  return;
+                }
+              }
+              try {
+                await update(itemRef, {
+                  name: document.getElementById('item-name').value,
+                  category: document.getElementById('item-category').value,
+                  price: parseFloat(document.getElementById('item-price').value),
+                  stock: parseInt(document.getElementById('item-stock').value),
+                  imageUrl,
+                  available: document.getElementById('item-available').checked,
+                  restaurantId: selectedRestaurantId
+                });
+                showToast('Menu item updated successfully');
+                addItemModal.classList.remove('active');
+                modalOverlay.classList.remove('active');
+                addItemForm.reset();
+                addItemForm.onsubmit = null;
+              } catch (error) {
+                showToast('Failed to update item: ' + error.message);
+              }
+            };
+          }, { once: true });
+        }
+      });
+
+      orderList.addEventListener('change', async (e) => {
+        if (e.target.tagName === 'SELECT') {
+          try {
+            await update(ref(db, `onlineOrders/${e.target.dataset.id}`), { status: e.target.value });
+            showToast('Order status updated');
+          } catch (error) {
+            showToast('Failed to update order status: ' + error.message);
+          }
+        }
+      });
+
+      logoutBtn.addEventListener('click', () => {
+        signOut(auth).then(() => {
+          showToast('Logged out successfully');
+          window.location.href = 'index.html';
+        }).catch(error => {
+          showToast('Failed to log out: ' + error.message);
         });
-        usernameInput.addEventListener("keypress", (e) => {
-          if (e.key === "Enter") handleSignUp();
-        });
-        emailInput.addEventListener("keypress", (e) => {
-          if (e.key === "Enter") handleSignUp();
-        });
-        passwordInput.addEventListener("keypress", (e) => {
-          if (e.key === "Enter") handleSignUp();
-        });
-      }
-      if (signinBtn) {
-        signinBtn.addEventListener("click", () => {
-          handleSignIn();
-          signinBtn.classList.add("tap-active");
-          setTimeout(() => signinBtn.classList.remove("tap-active"), 100);
-        });
-        signinEmailInput.addEventListener("keypress", (e) => {
-          if (e.key === "Enter") handleSignIn();
-        });
-        signinPasswordInput.addEventListener("keypress", (e) => {
-          if (e.key === "Enter") handleSignIn();
-        });
-      }
+      });
+
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          currentUser = user;
+          loadRestaurants();
+        } else {
+          showToast('Please log in to access the dashboard');
+          window.location.href = 'index.html';
+        }
+      });
     }
 
-    document.addEventListener("DOMContentLoaded", async () => {
+    document.addEventListener('DOMContentLoaded', () => {
       applyTheme();
-      await checkAuthState();
-      setupTabListeners();
-      setupAuthListeners();
+      setupListeners();
     });
   </script>
 </body>
