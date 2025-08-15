@@ -328,7 +328,7 @@
         </div>
         <div>
           <label class="block mb-1 text-text-dark">Phone</label>
-          <input type="tel" id="restaurant-phone" class="form-input" required>
+          <input type="tel" id="restaurant-phone" class="form-input" required pattern="[0-9+\\-()\\s]{7,15}">
         </div>
         <div>
           <label class="block mb-1 text-text-dark">Location (Click on Map)</label>
@@ -362,11 +362,23 @@
         </div>
         <div>
           <label class="block mb-1 text-text-dark">Price (R)</label>
-          <input type="number" id="item-price" class="form-input" step="0.01" required>
+          <input type="number" id="item-price" class="form-input" step="0.01" min="0" required>
         </div>
         <div>
           <label class="block mb-1 text-text-dark">Stock</label>
-          <input type="number" id="item-stock" class="form-input" required>
+          <input type="number" id="item-stock" class="form-input" min="0" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Low Stock Threshold</label>
+          <input type="number" id="item-lowStockThreshold" class="form-input" min="0" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Cost (R)</label>
+          <input type="number" id="item-cost" class="form-input" step="0.01" min="0" required>
+        </div>
+        <div>
+          <label class="block mb-1 text-text-dark">Barcode</label>
+          <input type="text" id="item-barcode" class="form-input" required>
         </div>
         <div>
           <label class="block mb-1 text-text-dark">Item Image</label>
@@ -577,6 +589,9 @@
             <p class="text-text-light">Category: ${item.category}</p>
             <p class="text-text-light">Price: R${item.price.toFixed(2)}</p>
             <p class="text-text-light">Stock: ${item.stock}</p>
+            <p class="text-text-light">Low Stock Threshold: ${item.lowStockThreshold}</p>
+            <p class="text-text-light">Cost: R${item.cost.toFixed(2)}</p>
+            <p class="text-text-light">Barcode: ${item.barcode}</p>
             <p class="text-text-light">Available: ${item.available ? 'Yes' : 'No'}</p>
             ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.name}" class="w-full h-32 object-cover rounded-lg mt-2">` : ''}
             <div class="flex gap-2 mt-2">
@@ -660,6 +675,10 @@
 
       addRestaurantForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!currentUser) {
+          showToast('Please log in to add a restaurant');
+          return;
+        }
         const file = document.getElementById('restaurant-image').files[0];
         let imageUrl = null;
         if (file) {
@@ -709,6 +728,10 @@
 
       addItemForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!currentUser) {
+          showToast('Please log in to add a menu item');
+          return;
+        }
         const file = document.getElementById('item-image').files[0];
         let imageUrl = null;
         if (file) {
@@ -724,6 +747,9 @@
           category: document.getElementById('item-category').value,
           price: parseFloat(document.getElementById('item-price').value),
           stock: parseInt(document.getElementById('item-stock').value),
+          lowStockThreshold: parseInt(document.getElementById('item-lowStockThreshold').value),
+          cost: parseFloat(document.getElementById('item-cost').value),
+          barcode: document.getElementById('item-barcode').value,
           imageUrl,
           available: document.getElementById('item-available').checked,
           restaurantId: selectedRestaurantId
@@ -770,14 +796,20 @@
             modalOverlay.classList.add('active');
             initMap();
             map.setCenter([restaurant.longitude, restaurant.latitude]);
-            new mapboxgl.Marker({ draggable: true })
+            const marker = new mapboxgl.Marker({ draggable: true })
               .setLngLat([restaurant.longitude, restaurant.latitude])
-              .addTo(map)
-              .on('dragend', () => {
-                const lngLat = this.getLngLat();
-                document.getElementById('restaurant-lat').value = lngLat.lat;
-                document.getElementById('restaurant-lng').value = lngLat.lng;
-              });
+              .addTo(map);
+            marker.on('dragend', () => {
+              const lngLat = marker.getLngLat();
+              document.getElementById('restaurant-lat').value = lngLat.lat;
+              document.getElementById('restaurant-lng').value = lngLat.lng;
+            });
+            map.on('click', (e) => {
+              const { lng, lat } = e.lngLat;
+              marker.setLngLat([lng, lat]);
+              document.getElementById('restaurant-lat').value = lat;
+              document.getElementById('restaurant-lng').value = lng;
+            });
             addRestaurantForm.onsubmit = async (e) => {
               e.preventDefault();
               const file = document.getElementById('restaurant-image').files[0];
@@ -831,6 +863,9 @@
             document.getElementById('item-category').value = item.category;
             document.getElementById('item-price').value = item.price;
             document.getElementById('item-stock').value = item.stock;
+            document.getElementById('item-lowStockThreshold').value = item.lowStockThreshold;
+            document.getElementById('item-cost').value = item.cost;
+            document.getElementById('item-barcode').value = item.barcode;
             document.getElementById('item-available').checked = item.available;
             addItemModal.classList.add('active');
             modalOverlay.classList.add('active');
@@ -852,6 +887,9 @@
                   category: document.getElementById('item-category').value,
                   price: parseFloat(document.getElementById('item-price').value),
                   stock: parseInt(document.getElementById('item-stock').value),
+                  lowStockThreshold: parseInt(document.getElementById('item-lowStockThreshold').value),
+                  cost: parseFloat(document.getElementById('item-cost').value),
+                  barcode: document.getElementById('item-barcode').value,
                   imageUrl,
                   available: document.getElementById('item-available').checked,
                   restaurantId: selectedRestaurantId
@@ -890,6 +928,7 @@
       });
 
       onAuthStateChanged(auth, (user) => {
+        console.log('Auth state changed:', user);
         if (user) {
           currentUser = user;
           loadRestaurants();
