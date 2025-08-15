@@ -417,7 +417,7 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
 
-    // Cloudinary configuration (replace with your Cloudinary details)
+    // Cloudinary configuration
     const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dqkujefxj/image/upload';
     const CLOUDINARY_UPLOAD_PRESET = 'banter_box';
 
@@ -481,11 +481,13 @@
         });
         const data = await response.json();
         if (data.secure_url) {
+          console.log('Image uploaded:', data.secure_url);
           return data.secure_url;
         } else {
           throw new Error('Image upload failed');
         }
       } catch (error) {
+        console.error('Image upload error:', error);
         throw new Error('Image upload failed: ' + error.message);
       }
     }
@@ -515,16 +517,26 @@
     }
 
     function loadRestaurants() {
-      if (!currentUser) return;
+      if (!currentUser) {
+        console.log('No current user, cannot load restaurants');
+        showToast('Please log in to view restaurants');
+        return;
+      }
+      console.log('Loading restaurants for user:', currentUser.uid);
       const restaurantsRef = ref(db, 'restaurants');
       onValue(restaurantsRef, (snapshot) => {
         const restaurants = snapshot.val() || {};
+        console.log('Restaurants data:', restaurants);
         restaurantSelector.innerHTML = '<option value="">Select a Restaurant</option>';
         restaurantList.innerHTML = '';
         let restaurantCount = 0;
 
         Object.entries(restaurants).forEach(([id, restaurant]) => {
-          if (restaurant.ownerId !== currentUser.uid) return;
+          console.log('Processing restaurant:', id, restaurant);
+          if (restaurant.ownerId !== currentUser.uid) {
+            console.log('Skipping restaurant, ownerId does not match:', restaurant.ownerId);
+            return;
+          }
           restaurantCount++;
           const option = document.createElement('option');
           option.value = id;
@@ -548,6 +560,14 @@
         });
 
         totalRestaurants.textContent = restaurantCount;
+        if (restaurantCount === 0) {
+          restaurantSelector.innerHTML = '<option value="">No restaurants available</option>';
+          restaurantList.innerHTML = '<p class="text-text-light">No restaurants found. Add a new restaurant to get started.</p>';
+        }
+        console.log('Total restaurants displayed:', restaurantCount);
+      }, (error) => {
+        console.error('Error loading restaurants:', error);
+        showToast('Failed to load restaurants: ' + error.message);
       });
     }
 
@@ -568,6 +588,9 @@
             ${data.imageUrl ? `<img src="${data.imageUrl}" alt="${data.name}" class="w-full h-32 object-cover rounded-lg mt-2">` : ''}
           `;
         }
+      }, (error) => {
+        console.error('Error loading restaurant info:', error);
+        showToast('Failed to load restaurant details: ' + error.message);
       });
     }
 
@@ -601,6 +624,9 @@
           `;
           menuItemsDiv.appendChild(itemDiv);
         });
+      }, (error) => {
+        console.error('Error loading menu items:', error);
+        showToast('Failed to load menu items: ' + error.message);
       });
     }
 
@@ -618,7 +644,7 @@
         orderList.innerHTML = '';
         Object.entries(orders).forEach(([id, order]) => {
           const orderItems = order.items || [];
-          const hasRestaurantItem = orderItems.some(item => menuItems[item.itemId]?.restaurantId === selectedRestaurantId);
+          const hasRestaurantItem = orderItems.some(item => item.restaurantId === selectedRestaurantId);
           if (!hasRestaurantItem) return;
           const orderDate = new Date(order.timestamp);
           if (orderDate >= today) {
@@ -643,6 +669,9 @@
         });
         todayOrders.textContent = todayOrderCount;
         revenue.textContent = `R${totalRevenue.toFixed(2)}`;
+      }, (error) => {
+        console.error('Error loading orders:', error);
+        showToast('Failed to load orders: ' + error.message);
       });
     }
 
@@ -679,6 +708,7 @@
           showToast('Please log in to add a restaurant');
           return;
         }
+        console.log('Submitting restaurant for user:', currentUser.uid);
         const file = document.getElementById('restaurant-image').files[0];
         let imageUrl = null;
         if (file) {
@@ -698,6 +728,7 @@
           imageUrl,
           ownerId: currentUser.uid
         };
+        console.log('Restaurant data to save:', restaurant);
         try {
           const newRestaurantRef = push(ref(db, 'restaurants'));
           await set(newRestaurantRef, restaurant);
@@ -706,6 +737,7 @@
           modalOverlay.classList.remove('active');
           addRestaurantForm.reset();
         } catch (error) {
+          console.error('Error adding restaurant:', error);
           showToast('Failed to add restaurant: ' + error.message);
         }
       });
@@ -732,6 +764,7 @@
           showToast('Please log in to add a menu item');
           return;
         }
+        console.log('Submitting menu item for restaurant:', selectedRestaurantId);
         const file = document.getElementById('item-image').files[0];
         let imageUrl = null;
         if (file) {
@@ -754,6 +787,7 @@
           available: document.getElementById('item-available').checked,
           restaurantId: selectedRestaurantId
         };
+        console.log('Menu item data to save:', item);
         try {
           const newItemRef = push(ref(db, 'menu'));
           await set(newItemRef, item);
@@ -762,12 +796,14 @@
           modalOverlay.classList.remove('active');
           addItemForm.reset();
         } catch (error) {
+          console.error('Error adding menu item:', error);
           showToast('Failed to add item: ' + error.message);
         }
       });
 
       restaurantSelector.addEventListener('change', (e) => {
         selectedRestaurantId = e.target.value;
+        console.log('Selected restaurant ID:', selectedRestaurantId);
         loadRestaurantInfo();
         loadMenuItems();
         loadOrders();
@@ -780,6 +816,7 @@
               await remove(ref(db, `restaurants/${e.target.dataset.id}`));
               showToast('Restaurant deleted successfully');
             } catch (error) {
+              console.error('Error deleting restaurant:', error);
               showToast('Failed to delete restaurant: ' + error.message);
             }
           }
@@ -838,6 +875,7 @@
                 addRestaurantForm.reset();
                 addRestaurantForm.onsubmit = null;
               } catch (error) {
+                console.error('Error updating restaurant:', error);
                 showToast('Failed to update restaurant: ' + error.message);
               }
             };
@@ -852,6 +890,7 @@
               await remove(ref(db, `menu/${e.target.dataset.id}`));
               showToast('Menu item deleted successfully');
             } catch (error) {
+              console.error('Error deleting menu item:', error);
               showToast('Failed to delete item: ' + error.message);
             }
           }
@@ -900,6 +939,7 @@
                 addItemForm.reset();
                 addItemForm.onsubmit = null;
               } catch (error) {
+                console.error('Error updating menu item:', error);
                 showToast('Failed to update item: ' + error.message);
               }
             };
@@ -913,6 +953,7 @@
             await update(ref(db, `onlineOrders/${e.target.dataset.id}`), { status: e.target.value });
             showToast('Order status updated');
           } catch (error) {
+            console.error('Error updating order status:', error);
             showToast('Failed to update order status: ' + error.message);
           }
         }
@@ -923,14 +964,16 @@
           showToast('Logged out successfully');
           window.location.href = 'index.html';
         }).catch(error => {
+          console.error('Error logging out:', error);
           showToast('Failed to log out: ' + error.message);
         });
       });
 
       onAuthStateChanged(auth, (user) => {
-        console.log('Auth state changed:', user);
+        console.log('Auth state changed:', user ? user.uid : 'No user');
         if (user) {
           currentUser = user;
+          console.log('Current user UID:', currentUser.uid);
           loadRestaurants();
         } else {
           showToast('Please log in to access the dashboard');
